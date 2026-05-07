@@ -443,12 +443,12 @@ function showFB(ok, e){
     f.innerHTML='<div style="margin-top:4px">Respuesta correcta.</div>';
   } else {
     let sol = '';
-    if(e.type==='write') sol = escapeHTML(e.kw.join(' ').replace(/\\/g,'').toUpperCase());
+    if(e.type==='write') sol = escapeHTML(e.sol || e.kw.join(' ').replace(/\\/g,'').toUpperCase());
     if(e.type==='choice') sol = escapeHTML(e.opts[e.ci]);
     if(e.type==='sort') sol = escapeHTML(e.ans.join(' '));
     if(e.type==='match') sol = e.pairs.map(p=>escapeHTML(p.q)+' ➔ '+escapeHTML(p.a)).join('<br>');
     if(e.type==='true_false') sol = e.ans ? 'Verdadero' : 'Falso';
-    f.innerHTML=`<div style="width:100%"><div style="margin-top:4px">Respuesta incorrecta.</div><div style="margin-top:12px;font-size:0.95rem;color:var(--text);padding-top:12px;border-top:1px solid rgba(244,63,94,0.3)"><strong>Solución esperada:</strong><div style="margin-top:8px;font-family:'JetBrains Mono',monospace;color:var(--warning);line-height:1.5">${sol}</div></div></div>`;
+    f.innerHTML=`<div style="width:100%"><div style="margin-top:4px">Respuesta incorrecta.</div><div style="margin-top:12px;font-size:0.95rem;color:var(--text);padding-top:12px;border-top:1px solid rgba(244,63,94,0.3)"><strong>Solución esperada:</strong><div style="margin-top:8px;font-family:'JetBrains Mono',monospace;color:var(--warning);line-height:1.5;word-break:break-word;white-space:pre-wrap;">${sol}</div></div></div>`;
   }
 }
 
