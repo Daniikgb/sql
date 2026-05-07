@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SQL-IA — Plataforma de Evaluación</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header>
+<div class="header-content">
+  <div class="logo" onclick="adminClick()"><span class="logo-dot"></span>SQL-IA</div>
+  <div class="user-info hidden" id="user-display">Evaluando: <span id="cur-user"></span></div>
+</div>
+</header>
+
+<!-- LOGIN -->
+<main id="s-login" class="screen active">
+<div class="login-wrapper">
+<div class="login-box">
+  <h1>Bienvenido</h1>
+  <p style="color:var(--muted);margin-bottom:2rem;font-size:.9rem">Ingresa tu nombre para comenzar la evaluación de SQL.</p>
+  <input type="text" id="inp-name" placeholder="Tu nombre completo" autocomplete="off">
+  <div id="name-err" class="error-msg">Ingresa un nombre válido.</div>
+  <button class="btn-primary" style="width:100%;margin-top:1.5rem" onclick="startTest()">Iniciar Evaluación</button>
+</div>
+</div>
+</main>
+
+<!-- EVAL -->
+<main id="s-eval" class="screen">
+<div class="container">
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+    <div class="progress-text" id="prog-text">1 / 10</div>
+  </div>
+  <div class="ex-card">
+    <div class="tag" id="ex-tag">ESCRIBE</div>
+    <h2 id="ex-title" style="margin-bottom:.4rem">Título</h2>
+    <p id="ex-desc" style="color:var(--muted);line-height:1.6">Descripción</p>
+    <div class="schema-box" id="ex-schema">schema</div>
+    <div id="input-area"></div>
+    <div id="fb" class="feedback"></div>
+    <div class="controls">
+      <button class="btn-ghost" id="btn-prev" onclick="go(-1)">Anterior</button>
+      <div class="controls-right">
+        <button class="btn-primary" id="btn-ok" onclick="validate()">Confirmar</button>
+        <button class="btn-ghost hidden" id="btn-next" onclick="go(1)">Siguiente</button>
+        <button class="btn-primary hidden" id="btn-end" onclick="finish()">Finalizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<!-- RESULTS -->
+<main id="s-result" class="screen">
+<div class="container">
+  <div class="result-card">
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem">Tu Puntuación</p>
+    <div class="score-big" id="score-big">0/10</div>
+    <p id="score-msg" style="color:var(--muted);margin-bottom:2rem">Respuestas registradas.</p>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:1rem">
+      <button class="btn-primary" onclick="window.location.reload()">Volver a Intentar</button>
+      <button class="btn-ghost" id="btn-cert" onclick="printCert()">Imprimir Certificado</button>
+    </div>
+  </div>
+  <div id="summary" style="margin-top:1.5rem"></div>
+</div>
+</main>
+
+<!-- CERTIFICADO -->
+<div id="cert-view">
+  <div class="cert-container" id="cert-container">
+    <div class="cert-border">
+      <div class="cert-content">
+        <h1 class="cert-title">Certificado de Reconocimiento</h1>
+        <p class="cert-subtitle">Otorgado a</p>
+        <h2 class="cert-name" id="cert-user-name">Estudiante</h2>
+        <p class="cert-body">Por haber completado exitosamente la Evaluación de SQL con un puntaje de <strong id="cert-score"></strong>, demostrando un excelente dominio de las consultas y estructuras de bases de datos relacionales.</p>
+        <div class="cert-footer">
+          <div class="cert-sig">
+            <div class="sig-line"></div>
+            <p>Firma del Administrador</p>
+          </div>
+          <div class="cert-date">
+            <p id="cert-date-text"></p>
+            <p>Fecha de Emisión</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<main id="s-admin" class="screen">
+<div class="container" style="max-width:1000px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <h2>Panel de Administración</h2>
+    <button class="btn-ghost" onclick="exitAdmin()">Salir</button>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="val" id="st-total">0</div><div class="lbl">Estudiantes</div></div>
+    <div class="stat-card"><div class="val" id="st-pass">0</div><div class="lbl">Aprobados</div></div>
+    <div class="stat-card"><div class="val" id="st-fail">0</div><div class="lbl">Reprobados</div></div>
+    <div class="stat-card"><div class="val" id="st-avg">0%</div><div class="lbl">Promedio</div></div>
+  </div>
+  <div class="ex-card" style="overflow-x:auto">
+    <table><thead><tr><th>Estudiante</th><th>Fecha</th><th>Puntaje</th><th>Estado</th></tr></thead>
+    <tbody id="admin-tb"></tbody></table>
+  </div>
+  <button class="btn-ghost" style="margin-top:1rem;border-color:var(--danger);color:var(--danger)" onclick="clearDB()">Eliminar Registros</button>
+</div>
+</main>
+
+<!-- MODAL -->
+<div id="modal-admin" class="modal">
+<div class="login-box" style="max-width:380px">
+  <h2 style="margin-bottom:1rem">Acceso Admin</h2>
+  <input type="password" id="admin-pwd" placeholder="Contraseña">
+  <button class="btn-primary" style="width:100%;margin-top:1rem" onclick="checkAdmin()">Entrar</button>
+  <button class="btn-ghost" style="width:100%;margin-top:.5rem;border:none" onclick="document.getElementById('modal-admin').style.display='none'">Cancelar</button>
+</div>
+</div>
+
+<script>
+let EX = [];
+const EX_POOL = [
+  // SELECT BASICS
+  {type:'write',tag:'ESCRIBE',title:'Selección Total',desc:'Obtén todos los registros y columnas de la tabla "productos".',schema:'productos (id, nombre, precio, stock)',kw:['select','\\*','from','productos'],sol:'SELECT * FROM productos'},
+  {type:'write',tag:'ESCRIBE',title:'Selección Específica',desc:'Muestra solo los nombres y precios de los productos.',schema:'productos (id, nombre, precio, stock)',kw:['select','nombre','precio','from','productos'],sol:'SELECT nombre, precio FROM productos'},
+  {type:'choice',tag:'ELIGE',title:'Alias con AS',desc:'¿Cuál usa correctamente un alias para renombrar la columna "nombre"?',schema:'productos (id, nombre)',opts:['SELECT nombre producto FROM productos','SELECT nombre AS producto FROM productos','SELECT nombre RENAME producto FROM productos','SELECT AS producto nombre FROM productos'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Columnas Distintas',desc:'Construye la consulta para obtener los diferentes países de los clientes.',schema:'clientes (id, nombre, pais)',frags:['SELECT','DISTINCT','pais','FROM','clientes'],ans:['SELECT','DISTINCT','pais','FROM','clientes']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Comando SELECT',desc:'El comando SELECT se utiliza para extraer o consultar datos de una base de datos.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Comandos SQL',desc:'Empareja cada comando DML con su acción.',schema:'-',opts:['Agrega filas','Modifica datos','Borra filas','Consulta datos'],pairs:[{q:'SELECT',a:'Consulta datos'},{q:'INSERT',a:'Agrega filas'},{q:'UPDATE',a:'Modifica datos'},{q:'DELETE',a:'Borra filas'}]},
+  {type:'write',tag:'ESCRIBE',title:'Alias a Tabla',desc:'Selecciona todas las columnas usando el alias "p" para la tabla "productos".',schema:'productos (id, nombre)',kw:['select','\\*','from','productos','p'],sol:'SELECT * FROM productos p'},
+  {type:'choice',tag:'ELIGE',title:'Alias con espacios',desc:'¿Cómo se debe escribir un alias que contiene espacios?',schema:'-',opts:['SELECT nombre AS Mi Producto','SELECT nombre AS [Mi Producto] o "Mi Producto"','SELECT nombre AS Mi_Producto','No se permiten espacios'],ci:1},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Punto y Coma',desc:'El punto y coma (;) es estrictamente obligatorio al final de cada consulta en todos los motores SQL modernos.',schema:'-',ans:false},
+  {type:'sort',tag:'ORDENAR',title:'Selección Múltiple',desc:'Ordena para mostrar email y ciudad de los usuarios.',schema:'usuarios (email, ciudad)',frags:['SELECT','email,','ciudad','FROM','usuarios'],ans:['SELECT','email,','ciudad','FROM','usuarios']},
+  // WHERE BASICS
+  {type:'write',tag:'ESCRIBE',title:'Filtro Simple',desc:'Selecciona los empleados con id igual a 5.',schema:'empleados (id, nombre)',kw:['select','\\*','from','empleados','where','id','=','5'],sol:'SELECT * FROM empleados WHERE id = 5'},
+  {type:'choice',tag:'ELIGE',title:'Filtrado Mayor a',desc:'¿Cuál muestra los productos con precio mayor a 100?',schema:'productos (id, nombre, precio)',opts:['SELECT * FROM productos WHERE precio > 100','SELECT * FROM productos HAVING precio > 100','SELECT precio > 100 FROM productos','FIND productos WHERE precio > 100'],ci:0},
+  {type:'match',tag:'PAREAR',title:'Operadores Lógicos',desc:'Empareja los operadores con su descripción.',schema:'-',opts:['Ambas condiciones','Una u otra','Ninguna','Niega la condición'],pairs:[{q:'AND',a:'Ambas condiciones'},{q:'OR',a:'Una u otra'},{q:'NOT',a:'Niega la condición'},{q:'NOR',a:'Ninguna'}]},
+  {type:'sort',tag:'ORDENAR',title:'Doble Filtro',desc:'Busca ventas mayores a 50 y hechas en efectivo.',schema:'ventas (total, metodo)',frags:['SELECT *','FROM ventas','WHERE total > 50','AND',"metodo = 'efectivo'"],ans:['SELECT *','FROM ventas','WHERE total > 50','AND',"metodo = 'efectivo'"]},
+  {type:'write',tag:'ESCRIBE',title:'Filtro de Texto',desc:'Busca al cliente cuya ciudad sea exactamente "Paris".',schema:'clientes (id, nombre, ciudad)',kw:['select','\\*','from','clientes','where','ciudad','=',"'paris'"],sol:"SELECT * FROM clientes WHERE ciudad = 'Paris'"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Sensibilidad a Mayúsculas',desc:'En SQL estándar, los valores de texto entre comillas simples NO distinguen entre mayúsculas y minúsculas.',schema:'-',ans:false},
+  {type:'choice',tag:'ELIGE',title:'Diferente de',desc:'¿Cuál operador representa "distinto de" o "no es igual"?',schema:'-',opts:['!= o <>','==','!!','=!'],ci:0},
+  {type:'sort',tag:'ORDENAR',title:'Filtro OR',desc:'Selecciona usuarios que son Admin o Moderador.',schema:'users (rol)',frags:['SELECT *','FROM users',"WHERE rol = 'Admin'","OR","rol = 'Mod'"],ans:['SELECT *','FROM users',"WHERE rol = 'Admin'","OR","rol = 'Mod'"]},
+  {type:'write',tag:'ESCRIBE',title:'Uso de NOT',desc:'Muestra productos que NO tienen precio de 0.',schema:'productos (precio)',kw:['select','\\*','from','productos','where','not','precio','=','0'],sol:"SELECT * FROM productos WHERE NOT precio = 0"},
+  {type:'match',tag:'PAREAR',title:'Operadores Relacionales',desc:'Empareja cada símbolo.',schema:'-',opts:['Mayor o igual','Menor que','Igualdad','Diferente'],pairs:[{q:'>=',a:'Mayor o igual'},{q:'<',a:'Menor que'},{q:'=',a:'Igualdad'},{q:'<>',a:'Diferente'}]},
+  // LIKE, IN, BETWEEN
+  {type:'write',tag:'ESCRIBE',title:'Búsqueda LIKE',desc:'Busca productos cuyo nombre termine en "phone".',schema:'productos (id, nombre)',kw:['select','\\*','from','productos','where','nombre','like',"'%phone'"],sol:"SELECT * FROM productos WHERE nombre LIKE '%phone'"},
+  {type:'choice',tag:'ELIGE',title:'Rango BETWEEN',desc:'¿Cuál filtra precios entre 50 y 100 inclusive?',schema:'productos (id, precio)',opts:['SELECT * FROM productos WHERE precio > 50 AND precio < 100','SELECT * FROM productos WHERE precio BETWEEN 50 AND 100','SELECT * FROM productos WHERE precio IN (50, 100)','SELECT * FROM productos WHERE precio RANGE 50 TO 100'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Filtro IN',desc:'Busca clientes de Madrid o Barcelona usando IN.',schema:'clientes (ciudad)',frags:['SELECT *','FROM clientes','WHERE ciudad IN',"('Madrid', 'Barcelona')"],ans:['SELECT *','FROM clientes','WHERE ciudad IN',"('Madrid', 'Barcelona')"]},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Comodín LIKE',desc:'El carácter "%" en un LIKE representa exactamente un solo carácter.',schema:'-',ans:false},
+  {type:'write',tag:'ESCRIBE',title:'Empieza con',desc:'Busca clientes cuyo nombre comience con "A".',schema:'clientes (nombre)',kw:['select','\\*','from','clientes','where','nombre','like',"'a%'"],sol:"SELECT * FROM clientes WHERE nombre LIKE 'A%'"},
+  {type:'match',tag:'PAREAR',title:'Comodines y Rangos',desc:'Empareja cada operador.',schema:'-',opts:['Múltiples caracteres','Un solo carácter','Rango de valores','Lista de valores'],pairs:[{q:'%',a:'Múltiples caracteres'},{q:'_',a:'Un solo carácter'},{q:'BETWEEN',a:'Rango de valores'},{q:'IN',a:'Lista de valores'}]},
+  {type:'choice',tag:'ELIGE',title:'Lista Excluyente',desc:'¿Cómo evitamos las ciudades "Roma" y "Lima"?',schema:'-',opts:["WHERE ciudad NOT IN ('Roma', 'Lima')","WHERE ciudad IN NOT ('Roma', 'Lima')","WHERE NOT ciudad ('Roma', 'Lima')","WHERE ciudad <> IN ('Roma', 'Lima')"],ci:0},
+  {type:'sort',tag:'ORDENAR',title:'Segundo Carácter',desc:'Busca nombres cuya segunda letra sea "o".',schema:'usuarios (nombre)',frags:['SELECT *','FROM usuarios','WHERE nombre','LIKE',"'_o%'"],ans:['SELECT *','FROM usuarios','WHERE nombre','LIKE',"'_o%'"]},
+  {type:'write',tag:'ESCRIBE',title:'NOT BETWEEN',desc:'Muestra productos cuyo precio NO esté entre 10 y 20.',schema:'productos (precio)',kw:['select','\\*','from','productos','where','precio','not','between','10','and','20'],sol:"SELECT * FROM productos WHERE precio NOT BETWEEN 10 AND 20"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'BETWEEN Fechas',desc:'El operador BETWEEN también puede utilizarse para buscar rangos de fechas, no solo números.',schema:'-',ans:true},
+  // NULL VALUES
+  {type:'write',tag:'ESCRIBE',title:'Verificar Nulos',desc:'Selecciona empleados que no tienen asignado un departamento (es NULO).',schema:'empleados (nombre, depto_id)',kw:['select','\\*','from','empleados','where','depto_id','is','null'],sol:"SELECT * FROM empleados WHERE depto_id IS NULL"},
+  {type:'choice',tag:'ELIGE',title:'Comparar con Nulo',desc:'¿Por qué es incorrecto usar "WHERE campo = NULL"?',schema:'-',opts:['Porque NULL no es un valor comparable, se debe usar IS NULL','Porque debe ser == NULL','Porque el estándar requiere IS BLANK','Sí es correcto usar = NULL'],ci:0},
+  {type:'sort',tag:'ORDENAR',title:'No es Nulo',desc:'Busca clientes con un email válido.',schema:'clientes (email)',frags:['SELECT *','FROM clientes','WHERE email','IS NOT NULL'],ans:['SELECT *','FROM clientes','WHERE email','IS NOT NULL']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Cero vs Null',desc:'Un valor numérico 0 es exactamente lo mismo que un valor NULL en la base de datos.',schema:'-',ans:false},
+  {type:'match',tag:'PAREAR',title:'Naturaleza del NULL',desc:'Empareja.',schema:'-',opts:['Cadena vacía','Ausencia de valor','Es nulo','No es nulo'],pairs:[{q:'NULL',a:'Ausencia de valor'},{q:'"" (vacío)',a:'Cadena vacía'},{q:'IS NULL',a:'Es nulo'},{q:'IS NOT NULL',a:'No es nulo'}]},
+  // ORDER BY / LIMIT
+  {type:'write',tag:'ESCRIBE',title:'Orden Ascendente',desc:'Muestra productos ordenados por precio del más barato al más caro.',schema:'productos (precio)',kw:['select','\\*','from','productos','order by','precio','asc'],sol:"SELECT * FROM productos ORDER BY precio ASC"},
+  {type:'choice',tag:'ELIGE',title:'Orden Descendente',desc:'¿Cuál palabra clave ordena de mayor a menor?',schema:'-',opts:['DESC','ASC','UP','DOWN'],ci:0},
+  {type:'sort',tag:'ORDENAR',title:'Límite',desc:'Muestra solo los 5 primeros clientes alfabéticamente.',schema:'clientes (nombre)',frags:['SELECT *','FROM clientes','ORDER BY nombre','ASC','LIMIT 5'],ans:['SELECT *','FROM clientes','ORDER BY nombre','ASC','LIMIT 5']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Orden por Defecto',desc:'Si omites ASC o DESC en el ORDER BY, el orden por defecto es Descendente (DESC).',schema:'-',ans:false},
+  {type:'write',tag:'ESCRIBE',title:'Múltiple Orden',desc:'Ordena primero por categoría (ascendente) y luego por precio (descendente).',schema:'productos (categoria, precio)',kw:['select','\\*','from','productos','order by','categoria','asc','precio','desc'],sol:"SELECT * FROM productos ORDER BY categoria ASC, precio DESC"},
+  {type:'match',tag:'PAREAR',title:'Cláusulas de Ordenamiento',desc:'Empareja cada concepto.',schema:'-',opts:['Menor a mayor','Mayor a menor','Cantidad de filas','Descartar filas iniciales'],pairs:[{q:'ASC',a:'Menor a mayor'},{q:'DESC',a:'Mayor a menor'},{q:'LIMIT / TOP',a:'Cantidad de filas'},{q:'OFFSET',a:'Descartar filas iniciales'}]},
+  {type:'choice',tag:'ELIGE',title:'Top N en SQL Server',desc:'En SQL Server, ¿cómo limitas los resultados (ya que no soporta LIMIT)?',schema:'-',opts:['TOP 5','FETCH 5','ONLY 5','MAX 5'],ci:0},
+  {type:'sort',tag:'ORDENAR',title:'Salto de Filas',desc:'Muestra los 3 productos más caros, saltando el top 1 (usando LIMIT y OFFSET).',schema:'productos (precio)',frags:['SELECT *','FROM productos','ORDER BY precio DESC','LIMIT 3','OFFSET 1'],ans:['SELECT *','FROM productos','ORDER BY precio DESC','LIMIT 3','OFFSET 1']},
+  {type:'write',tag:'ESCRIBE',title:'Orden por Posición',desc:'Ordena usando el índice numérico de la segunda columna del SELECT.',schema:'empleados (id, salario)',kw:['select','id','salario','from','empleados','order by','2'],sol:"SELECT id, salario FROM empleados ORDER BY 2"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'LIMIT al Final',desc:'La cláusula LIMIT siempre debe ir al final de la consulta.',schema:'-',ans:true},
+  // INSERT / UPDATE / DELETE
+  {type:'write',tag:'ESCRIBE',title:'Actualizar Dato',desc:'Cambia el stock a 50 del producto con id 2.',schema:'productos (stock, id)',kw:['update','productos','set','stock','=','50','where','id','=','2'],sol:"UPDATE productos SET stock = 50 WHERE id = 2"},
+  {type:'choice',tag:'ELIGE',title:'Eliminar sin WHERE',desc:'¿Qué ocurre si ejecutas UPDATE o DELETE sin la cláusula WHERE?',schema:'-',opts:['No hace nada y da error','Afecta a TODAS las filas de la tabla','Afecta a la primera fila','Pide confirmación automática'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Insertar',desc:'Inserta a "Ana" de "Lima" en clientes.',schema:'clientes (nombre, ciudad)',frags:['INSERT INTO','clientes','(nombre, ciudad)','VALUES',"('Ana', 'Lima')"],ans:['INSERT INTO','clientes','(nombre, ciudad)','VALUES',"('Ana', 'Lima')"]},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Eliminar Estructura vs Datos',desc:'DELETE FROM tabla elimina las filas, TRUNCATE es más rápido y reinicia autoincrementos.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Acciones DML y DDL',desc:'Empareja.',schema:'-',opts:['Actualiza datos','Inserta registros','Borra registros','Elimina la tabla completa'],pairs:[{q:'INSERT',a:'Inserta registros'},{q:'UPDATE',a:'Actualiza datos'},{q:'DELETE',a:'Borra registros'},{q:'DROP TABLE',a:'Elimina la tabla completa'}]},
+  {type:'write',tag:'ESCRIBE',title:'Insertar Múltiple',desc:'Inserta a "Sol" (edad 20) asumiendo orden implícito: nombre, edad.',schema:'usuarios (nombre, edad)',kw:['insert','into','usuarios','values',"'sol'",'20'],sol:"INSERT INTO usuarios VALUES ('Sol', 20)"},
+  {type:'choice',tag:'ELIGE',title:'Vaciar Tabla',desc:'¿Comando para vaciar una tabla enorme sin borrar su estructura?',schema:'-',opts:['DROP TABLE','DELETE ALL FROM','TRUNCATE TABLE','REMOVE TABLE'],ci:2},
+  {type:'sort',tag:'ORDENAR',title:'Borrar un Registro',desc:'Elimina el usuario con id 10.',schema:'usuarios (id)',frags:['DELETE','FROM','usuarios','WHERE','id = 10'],ans:['DELETE','FROM','usuarios','WHERE','id = 10']},
+  {type:'write',tag:'ESCRIBE',title:'Actualización Matemática',desc:'Incrementa el precio en +10 para categoría "A".',schema:'productos (precio, categoria)',kw:['update','productos','set','precio','=','precio','+','10','where','categoria','=',"'a'"],sol:"UPDATE productos SET precio = precio + 10 WHERE categoria = 'A'"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Transacciones',desc:'En una transacción, COMMIT guarda los cambios y ROLLBACK los deshace.',schema:'-',ans:true},
+  // AGGREGATE FUNCTIONS
+  {type:'write',tag:'ESCRIBE',title:'Total General',desc:'Suma de todos los salarios de la tabla empleados.',schema:'empleados (salario)',kw:['select','sum','salario','from','empleados'],sol:"SELECT SUM(salario) FROM empleados"},
+  {type:'choice',tag:'ELIGE',title:'Contar Registros',desc:'¿Qué hace COUNT(*)?',schema:'-',opts:['Cuenta el total de columnas','Cuenta el total de filas, incluyendo nulos','Suma todos los valores','Multiplica las filas'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Promedio',desc:'Calcula el precio promedio de los productos.',schema:'productos (precio)',frags:['SELECT','AVG(precio)','FROM','productos'],ans:['SELECT','AVG(precio)','FROM','productos']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Valores Nulos en Funciones',desc:'La función SUM() ignora automáticamente los valores nulos.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Agregaciones',desc:'Empareja la función con su resultado.',schema:'-',opts:['El valor más pequeño','El valor más grande','El total acumulado','La media aritmética'],pairs:[{q:'MAX()',a:'El valor más grande'},{q:'MIN()',a:'El valor más pequeño'},{q:'SUM()',a:'El total acumulado'},{q:'AVG()',a:'La media aritmética'}]},
+  {type:'write',tag:'ESCRIBE',title:'Máximo Valor',desc:'Encuentra el producto con mayor precio.',schema:'productos (precio)',kw:['select','max','precio','from','productos'],sol:"SELECT MAX(precio) FROM productos"},
+  {type:'choice',tag:'ELIGE',title:'Combinar Funciones',desc:'¿SELECT COUNT(*), SUM(total) FROM ventas es válido?',schema:'-',opts:['Sí, es válido','No, solo una a la vez','Solo si agrupamos','Solo en Oracle'],ci:0},
+  {type:'sort',tag:'ORDENAR',title:'Valores Distintos',desc:'Cuenta cuántas categorías distintas existen.',schema:'productos (categoria)',frags:['SELECT','COUNT(','DISTINCT categoria',')','FROM productos'],ans:['SELECT','COUNT(','DISTINCT categoria',')','FROM productos']},
+  {type:'write',tag:'ESCRIBE',title:'Conteo Específico',desc:'Cuenta cuántos emails no son nulos en usuarios.',schema:'usuarios (email)',kw:['select','count','email','from','usuarios'],sol:"SELECT COUNT(email) FROM usuarios"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'COUNT(col)',desc:'COUNT(nombre_columna) cuenta también los registros que tienen NULL.',schema:'-',ans:false},
+  // GROUP BY / HAVING
+  {type:'write',tag:'ESCRIBE',title:'Agrupación Básica',desc:'Muestra departamento y la cantidad de empleados por departamento.',schema:'empleados (departamento, id)',kw:['select','departamento','count','id','from','empleados','group by','departamento'],sol:"SELECT departamento, COUNT(id) FROM empleados GROUP BY departamento"},
+  {type:'choice',tag:'ELIGE',title:'HAVING vs WHERE',desc:'¿Cuál es la diferencia principal?',schema:'-',opts:['Son iguales','WHERE filtra antes de agrupar, HAVING después','HAVING es para UPDATE','WHERE es más rápido siempre'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Filtrar Grupos',desc:'Muestra los países con más de 5 clientes.',schema:'clientes (pais)',frags:['SELECT pais, COUNT(*)','FROM clientes','GROUP BY pais','HAVING COUNT(*) > 5'],ans:['SELECT pais, COUNT(*)','FROM clientes','GROUP BY pais','HAVING COUNT(*) > 5']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Regla GROUP BY',desc:'Toda columna en el SELECT que no sea función agregada, DEBE estar en GROUP BY.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Orden de Cláusulas',desc:'Empareja orden de ejecución.',schema:'-',opts:['Primero','Segundo','Tercero','Cuarto'],pairs:[{q:'FROM',a:'Primero'},{q:'WHERE',a:'Segundo'},{q:'GROUP BY',a:'Tercero'},{q:'HAVING',a:'Cuarto'}]},
+  {type:'write',tag:'ESCRIBE',title:'Suma Agrupada',desc:'Total de ventas por cada "cliente_id".',schema:'ventas (cliente_id, total)',kw:['select','cliente_id','sum','total','from','ventas','group by','cliente_id'],sol:"SELECT cliente_id, SUM(total) FROM ventas GROUP BY cliente_id"},
+  {type:'choice',tag:'ELIGE',title:'Filtrar en Grupo',desc:'Para filtrar a empleados de "Ventas" y luego agrupar, ¿dónde va "Ventas"?',schema:'-',opts:['En el HAVING','En el WHERE','En el FROM','En el LIMIT'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Agrupar y Ordenar',desc:'Agrupa por estado y cuenta clientes, ordenado descendente.',schema:'clientes (estado)',frags:['SELECT estado, COUNT(*)','FROM clientes','GROUP BY estado','ORDER BY COUNT(*) DESC'],ans:['SELECT estado, COUNT(*)','FROM clientes','GROUP BY estado','ORDER BY COUNT(*) DESC']},
+  {type:'write',tag:'ESCRIBE',title:'Múltiples Agrupaciones',desc:'Agrupa por "año" y "mes" y cuenta registros en ventas.',schema:'ventas (año, mes, id)',kw:['select','año','mes','count','id','from','ventas','group by','año','mes'],sol:"SELECT año, mes, COUNT(id) FROM ventas GROUP BY año, mes"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Alias en HAVING',desc:'Puedes usar alias definidos en SELECT dentro de HAVING en MySQL.',schema:'-',ans:true},
+  // JOINS
+  {type:'write',tag:'ESCRIBE',title:'INNER JOIN',desc:'Obtén todas las columnas uniendo "A" y "B" usando su "id".',schema:'A (id) - B (a_id)',kw:['select','\\*','from','a','inner join','b','on','a.id','=','b.a_id'],sol:"SELECT * FROM a INNER JOIN b ON a.id = b.a_id"},
+  {type:'choice',tag:'ELIGE',title:'LEFT JOIN',desc:'¿Qué hace un LEFT JOIN?',schema:'-',opts:['Coincidencias en ambas','TODAS las filas de la tabla izquierda y coincidencias de la derecha','Producto cartesiano','Sintaxis incorrecta'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Nombres y Deptos',desc:'Une empleados con departamentos para ver nombres.',schema:'emp (nombre, dep_id) - dep (id, nombre_dep)',frags:['SELECT emp.nombre, dep.nombre_dep','FROM emp','JOIN dep','ON emp.dep_id = dep.id'],ans:['SELECT emp.nombre, dep.nombre_dep','FROM emp','JOIN dep','ON emp.dep_id = dep.id']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'FULL OUTER JOIN',desc:'Devuelve todo de ambas tablas con nulos donde no hay coincidencia.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Tipos de JOINS',desc:'Empareja.',schema:'-',opts:['Intersección','Tabla Izq + Intersección','Tabla Der + Intersección','Todo'],pairs:[{q:'INNER',a:'Intersección'},{q:'LEFT',a:'Tabla Izq + Intersección'},{q:'RIGHT',a:'Tabla Der + Intersección'},{q:'FULL',a:'Todo'}]},
+  {type:'write',tag:'ESCRIBE',title:'JOIN con Alias',desc:'Une "clientes c" con "pedidos p" usando "c.id = p.cli_id". Todo.',schema:'-',kw:['select','\\*','from','clientes','c','join','pedidos','p','on','c.id','=','p.cli_id'],sol:"SELECT * FROM clientes c JOIN pedidos p ON c.id = p.cli_id"},
+  {type:'choice',tag:'ELIGE',title:'CROSS JOIN',desc:'¿Para qué sirve el CROSS JOIN?',schema:'-',opts:['Coincidencias exactas','Producto cartesiano (cada fila con TODAS)','Cruzar BDs','No existe'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'RIGHT JOIN',desc:'Muestra todos los cursos y estudiantes (si los hay).',schema:'cursos c, estudiantes e',frags:['SELECT e.nombre, c.curso','FROM estudiantes e','RIGHT JOIN cursos c','ON e.curso_id = c.id'],ans:['SELECT e.nombre, c.curso','FROM estudiantes e','RIGHT JOIN cursos c','ON e.curso_id = c.id']},
+  {type:'write',tag:'ESCRIBE',title:'Multi-JOIN',desc:'Une "A" y "B" (A.id=B.a_id) y luego con "C" (B.id=C.b_id).',schema:'-',kw:['select','\\*','from','a','join','b','on','a.id','=','b.a_id','join','c','on','b.id','=','c.b_id'],sol:"SELECT * FROM a JOIN b ON a.id = b.a_id JOIN c ON b.id = c.b_id"},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Self Join',desc:'SELF JOIN es unir una tabla consigo misma usando alias.',schema:'-',ans:true},
+  // CONCEPTS & CONSTRAINTS
+  {type:'write',tag:'ESCRIBE',title:'Crear Tabla',desc:'Crea tabla "A" con un "id" INT.',schema:'-',kw:['create','table','a','id','int'],sol:"CREATE TABLE a (id INT)"},
+  {type:'choice',tag:'ELIGE',title:'Clave Primaria',desc:'¿Qué define a una PRIMARY KEY?',schema:'-',opts:['Acepta nulos','Valores repetidos','Es única y no nula','Solo texto'],ci:2},
+  {type:'sort',tag:'ORDENAR',title:'Añadir Columna',desc:'Añade "edad INT" a "usuarios".',schema:'-',frags:['ALTER TABLE','usuarios','ADD','edad INT'],ans:['ALTER TABLE','usuarios','ADD','edad INT']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Clave Foránea',desc:'FOREIGN KEY vincula dos tablas para integridad referencial.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Constraints',desc:'Empareja.',schema:'-',opts:['Único','No nulo','Relación','Por defecto'],pairs:[{q:'UNIQUE',a:'Único'},{q:'NOT NULL',a:'No nulo'},{q:'FOREIGN KEY',a:'Relación'},{q:'DEFAULT',a:'Por defecto'}]},
+  {type:'write',tag:'ESCRIBE',title:'Eliminar Columna',desc:'Borra (DROP) la columna "edad" de "usuarios".',schema:'-',kw:['alter','table','usuarios','drop','column','edad'],sol:"ALTER TABLE usuarios DROP COLUMN edad"},
+  {type:'choice',tag:'ELIGE',title:'Indice',desc:'¿Propósito de un INDEX?',schema:'-',opts:['Ocultar datos','Acelerar búsquedas','Menos espacio','Admitir nulos'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Modificar Tipo',desc:'Cambia "edad" a VARCHAR(3) en "personas".',schema:'-',frags:['ALTER TABLE','personas','MODIFY','edad VARCHAR(3)'],ans:['ALTER TABLE','personas','MODIFY','edad VARCHAR(3)']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Vistas',desc:'Una Vista es una "tabla virtual" basada en un SELECT.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Acrónimos',desc:'Empareja.',schema:'-',opts:['Manipulación','Definición','Control','Relacional'],pairs:[{q:'DML',a:'Manipulación'},{q:'DDL',a:'Definición'},{q:'DCL',a:'Control'},{q:'RDBMS',a:'Relacional'}]},
+  // STRINGS / MATH / SUBQUERIES
+  {type:'write',tag:'ESCRIBE',title:'Subconsulta',desc:'Productos con precio MAYOR al promedio.',schema:'productos (precio)',kw:['select','\\*','from','productos','where','precio','>','select','avg','precio','from','productos'],sol:"SELECT * FROM productos WHERE precio > (SELECT AVG(precio) FROM productos)"},
+  {type:'choice',tag:'ELIGE',title:'Concatenación',desc:'¿Cómo unir textos?',schema:'-',opts:['c1 && c2','CONCAT(c1, c2) o c1 || c2','MERGE(c1, c2)','JOIN(c1, c2)'],ci:1},
+  {type:'sort',tag:'ORDENAR',title:'Subconsulta IN',desc:'Empleados con depto_id activo.',schema:'empleados, departamentos',frags:['SELECT * FROM empleados','WHERE depto_id IN','(SELECT id FROM departamentos',"WHERE activo = 1)"],ans:['SELECT * FROM empleados','WHERE depto_id IN','(SELECT id FROM departamentos',"WHERE activo = 1)"]},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'Correlacionada',desc:'Una subconsulta correlacionada se ejecuta una vez por cada fila de la externa.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Textos',desc:'Empareja.',schema:'-',opts:['A mayúsculas','A minúsculas','Longitud','Extraer'],pairs:[{q:'UPPER()',a:'A mayúsculas'},{q:'LOWER()',a:'A minúsculas'},{q:'LENGTH()',a:'Longitud'},{q:'SUBSTRING()',a:'Extraer'}]},
+  {type:'write',tag:'ESCRIBE',title:'Matemáticas',desc:'Precio por 1.21.',schema:'productos (precio)',kw:['select','precio','\\*','1.21','from','productos'],sol:"SELECT precio * 1.21 FROM productos"},
+  {type:'choice',tag:'ELIGE',title:'Redondeo',desc:'¿Función para redondear a 2 decimales?',schema:'-',opts:['CEIL()','FLOOR()','ROUND(v, 2)','TRUNCATE()'],ci:2},
+  {type:'sort',tag:'ORDENAR',title:'UNION',desc:'Une correos eliminando duplicados.',schema:'-',frags:['SELECT correo FROM profesores','UNION','SELECT correo FROM alumnos'],ans:['SELECT correo FROM profesores','UNION','SELECT correo FROM alumnos']},
+  {type:'true_false',tag:'VERDADERO/FALSO',title:'UNION ALL',desc:'UNION ALL mantiene duplicados y es más rápido que UNION.',schema:'-',ans:true},
+  {type:'match',tag:'PAREAR',title:'Avanzadas',desc:'Empareja.',schema:'-',opts:['Reemplaza nulos','Control If/Else','Convertir tipo','Transformar'],pairs:[{q:'COALESCE()',a:'Reemplaza nulos'},{q:'CASE WHEN',a:'Control If/Else'},{q:'CAST()',a:'Convertir tipo'},{q:'PIVOT',a:'Transformar'}]}
+];
+
+let raw=localStorage.getItem('sql_eval_v2');
+let db=raw?JSON.parse(raw):[];
+if(!Array.isArray(db)){let arr=[];for(let k in db)arr.push(db[k]);db=arr;}
+
+let user=sessionStorage.getItem('sql_user_v2');
+let cur=0,ans=[];
+let ac=0,at=null;
+
+// Anti-cheat
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+document.addEventListener('paste', e => e.preventDefault());
+document.addEventListener('cut', e => e.preventDefault());
+document.addEventListener('selectstart', e => {
+  if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') e.preventDefault();
+});
+
+let allowPrint = false;
+document.addEventListener('keydown', e => {
+  if (e.key === 'PrintScreen') {
+    navigator.clipboard.writeText('');
+    alert('Capturas de pantalla no permitidas.');
+    e.preventDefault();
+  }
+  if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'p' || e.key === 's' || e.key === 'x')) {
+    if (e.key === 'p' && allowPrint) return;
+    e.preventDefault();
+  }
+});
+document.addEventListener('dragstart', e => e.preventDefault());
+
+function printCert() {
+  const d = db[db.length - 1];
+  if(!d) return;
+  document.getElementById('cert-user-name').textContent = d.name;
+  document.getElementById('cert-score').textContent = Math.round(d.score/d.total*100) + '%';
+  document.getElementById('cert-date-text').textContent = d.date.split(',')[0];
+  allowPrint = true;
+  window.print();
+  setTimeout(() => allowPrint = false, 1000);
+}
+
+window.onload=()=>{
+  sessionStorage.removeItem('sql_user_v2');
+  user = null;
+  sw('s-login');
+};
+
+function sw(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
+function escapeHTML(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[&<>'"]/g, tag => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag]));
+}
+
+function startTest(){
+  const n=document.getElementById('inp-name').value.trim();
+  if(n.length<2 || n.length>50){document.getElementById('name-err').textContent='Ingresa un nombre válido (2-50 caracteres).';document.getElementById('name-err').style.display='block';return}
+  document.getElementById('name-err').style.display='none';
+  user=n;sessionStorage.setItem('sql_user_v2',n);
+  document.getElementById('cur-user').textContent=n;
+  document.getElementById('user-display').classList.remove('hidden');
+  
+  // Randomly pick exactly 20 exercises from the massive pool of 100
+  EX = [...EX_POOL].sort(() => Math.random() - 0.5).slice(0, 20);
+  
+  ans=EX.map(()=>({st:'pending',a:null,sc:0}));
+  cur=0;load();sw('s-eval');
+}
+
+function load(){
+  const e=EX[cur],s=ans[cur];
+  document.getElementById('prog-text').textContent=`${cur+1} / ${EX.length}`;
+  document.getElementById('prog-fill').style.width=((cur+1)/EX.length*100)+'%';
+  document.getElementById('ex-tag').textContent=e.tag;
+  document.getElementById('ex-title').textContent=e.title;
+  document.getElementById('ex-desc').textContent=e.desc;
+  document.getElementById('ex-schema').textContent=e.schema;
+  const area=document.getElementById('input-area');area.innerHTML='';
+
+  if(e.type==='write'){
+    area.innerHTML=`<textarea id="ans-w" class="sql-editor" placeholder="Escribe tu consulta SQL..." spellcheck="false">${s.a||''}</textarea>`;
+    const ta=document.getElementById('ans-w');
+    if(s.st!=='pending')ta.disabled=true;else ta.oninput=()=>s.a=ta.value;
+  }else if(e.type==='choice'){
+    const g=document.createElement('div');g.className='options-grid';
+    const L='ABCD';
+    e.opts.forEach((o,i)=>{
+      const b=document.createElement('button');b.className='option-btn';b.dataset.letter=L[i];b.textContent=o;
+      if(s.st!=='pending'){b.disabled=true;if(s.a===i)b.classList.add('selected');if(i===e.ci)b.style.borderColor='var(--success)';if(s.a===i&&i!==e.ci)b.style.borderColor='var(--danger)'}
+      else{b.onclick=()=>{g.querySelectorAll('.option-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');g.dataset.sel=i;s.a=i};if(s.a===i){b.classList.add('selected');g.dataset.sel=i}}
+      g.appendChild(b);
+    });area.appendChild(g);
+  }else if(e.type==='sort'){
+    const c=document.createElement('div');c.className='sort-box';
+    const fc=document.createElement('div');fc.className='frag-container';
+    const dc=document.createElement('div');dc.className='drop-container';
+    let av=s.st==='pending'?(s.av||[...e.frags].sort(()=>Math.random()-0.5)):[];
+    let se=s.a||[];
+    const renderS=()=>{
+      fc.innerHTML='';dc.innerHTML='';
+      av.forEach((f,i)=>{
+        const b=document.createElement('button');b.className='sort-btn';b.textContent=f;
+        if(s.st==='pending')b.onclick=()=>{se.push(f);av.splice(i,1);renderS()};else b.disabled=true;
+        fc.appendChild(b);
+      });
+      se.forEach((f,i)=>{
+        const b=document.createElement('button');b.className='sort-btn selected';b.textContent=f;
+        if(s.st==='pending')b.onclick=()=>{av.push(f);se.splice(i,1);renderS()};else b.disabled=true;
+        dc.appendChild(b);
+      });
+      area.dataset.sel=JSON.stringify(se);s.av=av;s.a=se;
+    };
+    renderS();
+    const h1=document.createElement('h4');h1.textContent='Bloques Disponibles:';c.appendChild(h1);c.appendChild(fc);
+    const h2=document.createElement('h4');h2.textContent='Tu Consulta:';c.appendChild(h2);c.appendChild(dc);
+    area.appendChild(c);
+  }else if(e.type==='match'){
+    const c=document.createElement('div');c.className='match-box';
+    e.pairs.forEach((p,i)=>{
+      const r=document.createElement('div');r.className='match-row';
+      const l=document.createElement('div');l.className='match-lbl';l.textContent=p.q;
+      const se=document.createElement('select');se.className='match-sel';se.dataset.i=i;
+      se.innerHTML=`<option value="">-- Selecciona --</option>`+e.opts.map(o=>`<option value="${escapeHTML(o)}" ${s.a&&s.a[i]===o?'selected':''}>${escapeHTML(o)}</option>`).join('');
+      if(s.st!=='pending')se.disabled=true;else se.onchange=()=>{if(!s.a)s.a=[];s.a[i]=se.value};
+      r.appendChild(l);r.appendChild(se);c.appendChild(r);
+    });
+    area.appendChild(c);
+  }else if(e.type==='true_false'){
+    const g=document.createElement('div');g.className='tf-grid';
+    ['Verdadero','Falso'].forEach((o,i)=>{
+      const val=i===0;
+      const b=document.createElement('button');b.className='tf-btn';b.textContent=o;
+      if(s.st!=='pending'){
+        b.disabled=true;if(s.a===val)b.classList.add('selected');
+        if(val===e.ans)b.style.borderColor='var(--success)';
+        if(s.a===val&&val!==e.ans)b.style.borderColor='var(--danger)';
+      }else{
+        b.onclick=()=>{g.querySelectorAll('.tf-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');g.dataset.sel=val;s.a=val};
+        if(s.a===val){b.classList.add('selected');g.dataset.sel=val}
+      }
+      g.appendChild(b);
+    });area.appendChild(g);
+  }
+
+  document.getElementById('fb').style.display='none';
+  document.getElementById('btn-prev').disabled=cur===0;
+  if(s.st!=='pending'){
+    showFB(s.st==='correct', e);
+    document.getElementById('btn-ok').classList.add('hidden');
+    if(cur<EX.length-1){document.getElementById('btn-next').classList.remove('hidden');document.getElementById('btn-end').classList.add('hidden')}
+    else{document.getElementById('btn-next').classList.add('hidden');document.getElementById('btn-end').classList.remove('hidden')}
+  }else{
+    document.getElementById('btn-ok').classList.remove('hidden');
+    document.getElementById('btn-next').classList.add('hidden');
+    document.getElementById('btn-end').classList.add('hidden');
+  }
+}
+
+function clean(t){return t.toLowerCase().replace(/[\n\r;]/g,' ').replace(/\s+/g,' ').trim()}
+
+function validate(){
+  const e=EX[cur];let ok=false,ua=null;
+  if(e.type==='write'){
+    ua=document.getElementById('ans-w').value.trim();if(!ua)return alert('Escribe una respuesta.');
+    const c=clean(ua),p=e.kw.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*');
+    ok=new RegExp(p,'i').test(c);
+  }else if(e.type==='choice'){
+    const g=document.querySelector('.options-grid');if(!g.dataset.sel)return alert('Selecciona una opción.');
+    ua=parseInt(g.dataset.sel);ok=ua===e.ci;
+  }else if(e.type==='sort'){
+    const uaStr=document.getElementById('input-area').dataset.sel;
+    if(!uaStr||uaStr==='[]')return alert('Construye la consulta ordenando los bloques.');
+    ua=JSON.parse(uaStr);if(ua.length!==e.frags.length)return alert('Usa todos los bloques para construir la consulta.');
+    ok=ua.join(' ')===e.ans.join(' ');
+  }else if(e.type==='match'){
+    const sels=[...document.querySelectorAll('.match-sel')];
+    ua=sels.map(s=>s.value);if(ua.some(v=>!v))return alert('Completa todos los pares.');
+    ok=true;ua.forEach((v,i)=>{if(v!==e.pairs[i].a)ok=false});
+  }else if(e.type==='true_false'){
+    const g=document.querySelector('.tf-grid');if(!g.dataset.sel)return alert('Selecciona Verdadero o Falso.');
+    ua=g.dataset.sel==='true';ok=ua===e.ans;
+  }
+  ans[cur]={st:ok?'correct':'incorrect',a:ua,sc:ok?1:0};
+  load();
+}
+
+function showFB(ok, e){
+  const f=document.getElementById('fb');
+  f.style.display='flex';
+  f.style.alignItems='flex-start';
+  f.className='feedback '+(ok?'ok':'no');
+  if(ok){
+    f.innerHTML='<div style="margin-top:4px">Respuesta correcta.</div>';
+  } else {
+    let sol = '';
+    if(e.type==='write') sol = escapeHTML(e.kw.join(' ').replace(/\\/g,'').toUpperCase());
+    if(e.type==='choice') sol = escapeHTML(e.opts[e.ci]);
+    if(e.type==='sort') sol = escapeHTML(e.ans.join(' '));
+    if(e.type==='match') sol = e.pairs.map(p=>escapeHTML(p.q)+' ➔ '+escapeHTML(p.a)).join('<br>');
+    if(e.type==='true_false') sol = e.ans ? 'Verdadero' : 'Falso';
+    f.innerHTML=`<div style="width:100%"><div style="margin-top:4px">Respuesta incorrecta.</div><div style="margin-top:12px;font-size:0.95rem;color:var(--text);padding-top:12px;border-top:1px solid rgba(244,63,94,0.3)"><strong>Solución esperada:</strong><div style="margin-top:8px;font-family:'JetBrains Mono',monospace;color:var(--warning);line-height:1.5">${sol}</div></div></div>`;
+  }
+}
+
+function go(d){cur+=d;load()}
+
+function finish(){
+  if(ans.some(a=>a.st==='pending'))return alert('Faltan preguntas por responder.');
+  const sc=ans.reduce((a,c)=>a+c.sc,0);
+  const data={name:user,score:sc,total:EX.length,answers:ans,date:new Date().toLocaleString()};
+  db.push(data);
+  try{localStorage.setItem('sql_eval_v2',JSON.stringify(db))}catch(e){console.error('Storage full', e)}
+  showResult(data);
+}
+
+function showResult(d){
+  sw('s-result');
+  document.getElementById('user-display').classList.remove('hidden');
+  document.getElementById('cur-user').textContent=d.name;
+  document.getElementById('score-big').textContent=`${d.score}/${d.total}`;
+  const pct=Math.round(d.score/d.total*100);
+  document.getElementById('score-msg').textContent=pct>=80?'Excelente rendimiento.':pct>=50?'Buen trabajo, puedes mejorar.':'Se recomienda repasar los temas.';
+  const sm=document.getElementById('summary');sm.innerHTML='';
+  d.answers.forEach((a,i)=>{
+    const ok=a.st==='correct';
+    let atxt=a.a;
+    if(EX[i].type==='choice')atxt=EX[i].opts[a.a];
+    if(EX[i].type==='sort')atxt=a.a?a.a.join(' '):'-';
+    if(EX[i].type==='match')atxt=a.a?a.a.join(', '):'-';
+    if(EX[i].type==='true_false')atxt=a.a!==null?(a.a?'Verdadero':'Falso'):'-';
+    sm.innerHTML+=`<div class="summary-item"><div><div class="title">P${i+1}: ${escapeHTML(EX[i].title)}</div><div class="answer">${escapeHTML(String(atxt||'-'))}</div></div><span class="badge ${ok?'ok':'no'}">${ok?'Correcto':'Incorrecto'}</span></div>`;
+  });
+}
+
+// Admin
+function adminClick(){ac++;clearTimeout(at);at=setTimeout(()=>ac=0,2000);if(ac>=5){ac=0;document.getElementById('modal-admin').style.display='flex';document.getElementById('admin-pwd').value='';document.getElementById('admin-pwd').focus()}}
+
+function checkAdmin(){if(document.getElementById('admin-pwd').value==='ram123456789jd'){document.getElementById('modal-admin').style.display='none';renderAdmin();sw('s-admin');document.getElementById('user-display').classList.add('hidden')}else alert('Clave incorrecta.')}
+
+function exitAdmin(){sw('s-login');}
+
+function renderAdmin(){
+  const tb=document.getElementById('admin-tb');tb.innerHTML='';
+  let t=0,p=0,f=0,ts=0;
+  db.forEach(d=>{t++;const pct=d.score/d.total;ts+=pct;if(pct>=0.6)p++;else f++;
+    tb.innerHTML+=`<tr><td style="font-weight:600">${escapeHTML(d.name)}</td><td style="color:var(--muted);font-size:.85rem">${escapeHTML(d.date)}</td><td class="mono">${d.score}/${d.total}</td><td><span class="badge ${pct>=0.6?'ok':'no'}">${pct>=0.6?'Aprobado':'Reprobado'}</span></td></tr>`;
+  });
+  document.getElementById('st-total').textContent=t;
+  document.getElementById('st-pass').textContent=p;
+  document.getElementById('st-fail').textContent=f;
+  document.getElementById('st-avg').textContent=t?Math.round(ts/t*100)+'%':'0%';
+}
+
+function clearDB(){if(confirm('¿Eliminar todos los registros?')){localStorage.removeItem('sql_eval_v2');sessionStorage.removeItem('sql_user_v2');db=[];user=null;renderAdmin()}}
+</script>
+</body>
+</html>
