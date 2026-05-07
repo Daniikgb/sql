@@ -213,37 +213,7 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-/* Responsive */
-@media(max-width: 640px) {
-  .container { padding: 1rem; }
-  .header-content { padding: 1rem; }
-  .logo { font-size: 1.1rem; }
-  .user-info { font-size: .8rem; padding: 0.3rem 0.8rem; }
-  .ex-card, .login-box, .result-card { padding: 1.5rem; border-radius: 20px; }
-  .controls { flex-direction: column; gap: 12px; margin-top: 1.5rem; padding-top: 1.5rem; }
-  .controls-right { width: 100%; flex-direction: column; gap: 12px; }
-  .btn-primary, .btn-ghost { width: 100%; text-align: center; padding: .8rem 1rem; }
-  .stats-row { grid-template-columns: 1fr; gap: 1rem; }
-  table { display: block; overflow-x: auto; white-space: nowrap; }
-  .score-big { font-size: 3.5rem; }
-  .login-box h1 { font-size: 1.8rem; }
-  .schema-box { font-size: .85rem; padding: 1.25rem; }
-  #ex-title { font-size: 1.3rem; }
-  .sql-editor { height: 110px; font-size: .85rem; }
-  
-  /* Ajustes específicos para ejercicios en móvil */
-  .frag-container, .drop-container { padding: 10px; gap: 8px; }
-  .sort-btn { padding: 10px 14px; font-size: .85rem; }
-  
-  .match-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 15px; }
-  .match-sel { width: 100%; min-width: 0; }
-  
-  .tf-grid { grid-template-columns: 1fr; gap: 12px; }
-  .tf-btn { padding: 1.5rem; font-size: 1.1rem; }
-  
-  .option-btn { padding: 1rem 1rem 1rem 3.5rem; font-size: .85rem; }
-  .option-btn::before { left: 1rem; width: 26px; height: 26px; font-size: .8rem; }
-}
+/* Responsive rules moved to bottom to fix specificity */
 
 /* Sort */
 .sort-box h4 { margin: 15px 0 10px; color: var(--muted); font-size: .9rem; text-transform: uppercase; letter-spacing: .05em; font-family: 'Outfit', sans-serif; }
@@ -287,4 +257,36 @@ tr:hover td { background: rgba(255,255,255,0.03); }
   .screen, header { display: none !important; }
   #cert-view { display: block !important; position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background: white; z-index: 9999; margin: 0; padding: 0; }
   @page { margin: 0; size: landscape; }
+}
+
+/* Responsive */
+@media(max-width: 640px) {
+  .container { padding: 1rem; }
+  .header-content { padding: 1rem; }
+  .logo { font-size: 1.1rem; }
+  .user-info { font-size: .8rem; padding: 0.3rem 0.8rem; }
+  .ex-card, .login-box, .result-card { padding: 1.5rem; border-radius: 20px; }
+  .controls { flex-direction: column; gap: 12px; margin-top: 1.5rem; padding-top: 1.5rem; }
+  .controls-right { width: 100%; flex-direction: column; gap: 12px; }
+  .btn-primary, .btn-ghost { width: 100%; text-align: center; padding: .8rem 1rem; }
+  .stats-row { grid-template-columns: 1fr; gap: 1rem; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+  .score-big { font-size: 3.5rem; }
+  .login-box h1 { font-size: 1.8rem; }
+  .schema-box { font-size: .85rem; padding: 1.25rem; word-break: break-word; white-space: pre-wrap; }
+  #ex-title { font-size: 1.3rem; }
+  .sql-editor { height: 110px; font-size: .85rem; }
+  
+  /* Ajustes específicos para ejercicios en móvil */
+  .frag-container, .drop-container { padding: 10px; gap: 8px; }
+  .sort-btn { padding: 10px 14px; font-size: .85rem; }
+  
+  .match-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 15px; }
+  .match-sel { width: 100%; min-width: 0; }
+  
+  .tf-grid { grid-template-columns: 1fr; gap: 12px; }
+  .tf-btn { padding: 1.5rem; font-size: 1.1rem; word-break: break-word; }
+  
+  .option-btn { padding: 1rem 1rem 1rem 3.5rem; font-size: .85rem; word-break: break-word; line-height: 1.5; }
+  .option-btn::before { left: 1rem; width: 26px; height: 26px; font-size: .8rem; }
 }
